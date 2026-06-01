@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import '../styles/Dashboard.css';
 import '../styles/Materiels.css';
 import {
   FiHome, FiChevronLeft, FiChevronRight, FiChevronDown,
-  FiAlertTriangle, FiBell, FiSettings, FiSearch
+  FiAlertTriangle, FiBell, FiSettings, FiSearch, FiSave, FiX
 } from 'react-icons/fi';
 import { HiOutlineDesktopComputer } from 'react-icons/hi';
 import { MdOutlineAssignment, MdOutlineNotifications, MdOutlineDashboard } from 'react-icons/md';
@@ -13,27 +13,30 @@ import { TbReportAnalytics, TbDeviceDesktop } from 'react-icons/tb';
 import { BsTools, BsFileText, BsPeople } from 'react-icons/bs';
 import { useAuth } from '../context/AuthContext';
 
-export default function SignalerPanne() {
+export default function ModifierMaintenance() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const nom = localStorage.getItem('nom');
   const prenom = localStorage.getItem('prenom');
   const email = localStorage.getItem('email');
   const role = localStorage.getItem('role');
   const { notifCount } = useAuth();
-  const userId = localStorage.getItem('userId');
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [materiels, setMateriels] = useState([]);
-  const [utilisateurs, setUtilisateurs] = useState([]);
+  const [techniciens, setTechniciens] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const [form, setForm] = useState({
+    type: 'Préventive',
     description: '',
-    niveauGravite: 'MOYENNE',
+    dateDebut: '',
+    dateFin: '',
+    resultat: '',
     idMateriel: '',
-    idBeneficiaire: '',
+    idTechnicien: '',
   });
 
   const menuItems = [
@@ -51,27 +54,42 @@ export default function SignalerPanne() {
   const getRoleLabel = () => {
     switch (role) {
       case 'ADMINISTRATEUR': return 'Administrateur';
-      case 'RESPONSABLE': return 'Responsable';
       case 'TECHNICIEN': return 'Technicien';
-      case 'BENEFICIAIRE': return 'Bénéficiaire';
       default: return 'Utilisateur';
     }
   };
 
   useEffect(() => {
-    // Charger tous les matériels
-    api.get('/api/materiels').then(res => setMateriels(res.data)).catch(() => {});
+    // Charger la maintenance
+    api.get(`/api/maintenances/${id}`)
+      .then(res => {
+        const m = res.data;
+        setForm({
+          type: m.type || 'Préventive',
+          description: m.description || '',
+          dateDebut: m.dateDebut || '',
+          dateFin: m.dateFin || '',
+          resultat: m.resultat || '',
+          idMateriel: m.materiel?.id || '',
+          idTechnicien: m.technicien?.id || '',
+        });
+      })
+      .catch(() => {
+        alert("Maintenance introuvable.");
+        navigate('/maintenances');
+      })
+      .finally(() => setFetching(false));
 
-    // Si bénéficiaire → pré-remplir son ID
-    if (role === 'BENEFICIAIRE') {
-      setForm(prev => ({ ...prev, idBeneficiaire: userId }));
-    } else {
-      // Charger la liste des bénéficiaires
-      api.get('/api/utilisateurs')
-        .then(res => setUtilisateurs(res.data.filter(u => u.role === 'BENEFICIAIRE')))
-        .catch(() => {});
-    }
-  }, [role, userId]);
+    // Charger matériels
+    api.get('/api/materiels')
+      .then(res => setMateriels(res.data))
+      .catch(() => {});
+
+    // Charger techniciens
+    api.get('/api/utilisateurs')
+      .then(res => setTechniciens(res.data.filter(u => u.role === 'TECHNICIEN')))
+      .catch(() => {});
+  }, [id]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -80,20 +98,21 @@ export default function SignalerPanne() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
     setLoading(true);
     try {
-      await api.post('/api/pannes/signaler', {
+      await api.put(`/api/maintenances/${id}`, {
+        type: form.type,
         description: form.description,
-        niveauGravite: form.niveauGravite,
-        idMateriel: parseInt(form.idMateriel),
-        idBeneficiaire: parseInt(form.idBeneficiaire),
+        dateDebut: form.dateDebut || null,
+        dateFin: form.dateFin || null,
+        resultat: form.resultat || null,
+        materiel: { id: parseInt(form.idMateriel) },
+        technicien: { id: parseInt(form.idTechnicien) },
       });
-      setSuccess('Panne signalée avec succès !');
-      setTimeout(() => navigate('/pannes'), 1500);
+      navigate('/maintenances');
     } catch (err) {
       const errData = err.response?.data;
-      setError(typeof errData === 'string' ? errData : errData?.erreur || 'Erreur lors du signalement.');
+      setError(typeof errData === 'string' ? errData : errData?.erreur || 'Erreur lors de la modification.');
     } finally {
       setLoading(false);
     }
@@ -115,6 +134,14 @@ export default function SignalerPanne() {
     color: '#94a3b8',
     fontWeight: '500',
   };
+
+  if (fetching) {
+    return (
+      <div className="db-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: '#64748b', fontSize: 16 }}>Chargement...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="db-root">
@@ -140,7 +167,7 @@ export default function SignalerPanne() {
           {menuItems.map((item) => (
             <div
               key={item.label}
-              className={`db-nav-item ${item.label === 'Pannes' ? 'db-nav-active' : ''}`}
+              className={`db-nav-item ${item.label === 'Maintenances' ? 'db-nav-active' : ''}`}
               onClick={() => navigate(item.path)}
             >
               <span className="db-nav-icon">{item.icon}</span>
@@ -174,8 +201,6 @@ export default function SignalerPanne() {
 
       {/* ── MAIN ── */}
       <main className="db-main">
-
-        {/* ── TOPBAR ── */}
         <header className="db-topbar">
           <div className="db-search">
             <FiSearch size={16} color="#64748b" />
@@ -197,27 +222,23 @@ export default function SignalerPanne() {
           </div>
         </header>
 
-        {/* ── CONTENT ── */}
         <div className="db-content">
-
-          {/* ── HEADER ── */}
           <div className="mat-header">
             <div>
-              <h1 className="mat-title">Signaler une Panne</h1>
+              <h1 className="mat-title">Modifier Maintenance</h1>
               <div className="mat-breadcrumb">
                 <FiHome size={13} />
                 <span style={{ cursor: 'pointer', color: '#3B82F6' }}
                   onClick={() => navigate('/dashboard')}>Accueil</span>
                 <span className="mat-sep">/</span>
                 <span style={{ cursor: 'pointer', color: '#3B82F6' }}
-                  onClick={() => navigate('/pannes')}>Pannes</span>
+                  onClick={() => navigate('/maintenances')}>Maintenances</span>
                 <span className="mat-sep">/</span>
-                <span className="mat-bc-active">Signaler</span>
+                <span className="mat-bc-active">Modifier</span>
               </div>
             </div>
           </div>
 
-          {/* ── FORM ── */}
           <div style={{
             background: '#0A1628',
             border: '1px solid #1A2B4A',
@@ -232,51 +253,29 @@ export default function SignalerPanne() {
                 border: '1px solid rgba(239,68,68,0.4)',
                 borderRadius: '8px', padding: '12px 16px',
                 marginBottom: '20px', color: '#f87171', fontSize: '14px'
-              }}>
-                ⚠ {error}
-              </div>
-            )}
-
-            {success && (
-              <div style={{
-                background: 'rgba(34,197,94,0.1)',
-                border: '1px solid rgba(34,197,94,0.4)',
-                borderRadius: '8px', padding: '12px 16px',
-                marginBottom: '20px', color: '#22C55E', fontSize: '14px'
-              }}>
-                ✅ {success}
-              </div>
+              }}>⚠ {error}</div>
             )}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-              {/* Description */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={labelStyle}>Description *</label>
-                <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  required
-                  rows={3}
-                  placeholder="Décrivez la panne..."
-                  style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
-                />
-              </div>
-
-              {/* Gravité */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={labelStyle}>Niveau de gravité *</label>
-                <select name="niveauGravite" value={form.niveauGravite} onChange={handleChange} style={inputStyle}>
-                  <option value="FAIBLE">Faible</option>
-                  <option value="MOYENNE">Moyenne</option>
-                  <option value="HAUTE">Haute</option>
+                <label style={labelStyle}>Type de maintenance *</label>
+                <select name="type" value={form.type} onChange={handleChange} style={inputStyle}>
+                  <option value="Préventive">Préventive</option>
+                  <option value="Corrective">Corrective</option>
+                  <option value="Curative">Curative</option>
                 </select>
               </div>
 
-              {/* Matériel */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={labelStyle}>Matériel concerné *</label>
+                <label style={labelStyle}>Description *</label>
+                <textarea name="description" value={form.description} onChange={handleChange}
+                  required rows={3} placeholder="Décrivez la maintenance..."
+                  style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={labelStyle}>Matériel *</label>
                 <select name="idMateriel" value={form.idMateriel} onChange={handleChange} required style={inputStyle}>
                   <option value="">-- Sélectionner un matériel --</option>
                   {materiels.map(m => (
@@ -287,47 +286,62 @@ export default function SignalerPanne() {
                 </select>
               </div>
 
-              {/* Bénéficiaire — seulement pour Admin/Technicien/Responsable */}
-              {role !== 'BENEFICIAIRE' && (
+              {role !== 'TECHNICIEN' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={labelStyle}>Bénéficiaire *</label>
-                  <select name="idBeneficiaire" value={form.idBeneficiaire} onChange={handleChange} required style={inputStyle}>
-                    <option value="">-- Sélectionner un bénéficiaire --</option>
-                    {utilisateurs.map(u => (
-                      <option key={u.id} value={u.id}>
-                        {u.nom} {u.prenom} — {u.email}
+                  <label style={labelStyle}>Technicien *</label>
+                  <select name="idTechnicien" value={form.idTechnicien} onChange={handleChange} required style={inputStyle}>
+                    <option value="">-- Sélectionner un technicien --</option>
+                    {techniciens.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.nom} {t.prenom} — {t.email}
                       </option>
                     ))}
                   </select>
                 </div>
               )}
 
-              {/* Boutons */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={labelStyle}>Date début</label>
+                  <input type="date" name="dateDebut" value={form.dateDebut}
+                    onChange={handleChange} style={inputStyle} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={labelStyle}>Date fin</label>
+                  <input type="date" name="dateFin" value={form.dateFin}
+                    onChange={handleChange} style={inputStyle} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={labelStyle}>Résultat</label>
+                <textarea name="resultat" value={form.resultat} onChange={handleChange}
+                  rows={2} placeholder="Résultat de la maintenance..."
+                  style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
+              </div>
+
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => navigate('/pannes')}
+                <button type="button" onClick={() => navigate('/maintenances')}
                   style={{
                     flex: 1, padding: '13px', background: 'transparent',
                     border: '1px solid #1A2B4A', borderRadius: '10px',
-                    color: '#64748b', fontSize: '15px', cursor: 'pointer'
-                  }}
-                >
-                  Annuler
+                    color: '#64748b', fontSize: '15px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                  }}>
+                  <FiX size={16} /> Annuler
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading}
+                <button type="submit" disabled={loading}
                   style={{
                     flex: 1, padding: '13px',
-                    background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+                    background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
                     border: 'none', borderRadius: '10px',
                     color: '#fff', fontSize: '15px', fontWeight: '600',
                     cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.7 : 1
-                  }}
-                >
-                  {loading ? 'Signalement...' : '⚠ Signaler la panne'}
+                    opacity: loading ? 0.7 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                  }}>
+                  <FiSave size={16} />
+                  {loading ? 'Enregistrement...' : 'Enregistrer les modifications'}
                 </button>
               </div>
 

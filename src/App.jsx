@@ -16,6 +16,15 @@ import ModifierUtilisateur from './pages/ModifierUtilisateur';
 import Pannes from './pages/Pannes';
 import SignalerPanne from './pages/SignalerPanne';
 import ModifierPanne from './pages/ModifierPanne';
+import Maintenances from './pages/Maintenances';
+import AjouterMaintenance from './pages/AjouterMaintenance';
+import ModifierMaintenance from './pages/ModifierMaintenance';
+import Demandes from './pages/Demandes';
+import AjouterDemande from './pages/AjouterDemande';
+import DetailDemande from './pages/DetailDemande';
+import ModifierDemande from './pages/ModifierDemande';
+import Notifications from './pages/Notifications';
+import Rapports from './pages/Rapports';
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
   return token ? children : <Navigate to="/login" replace />;
@@ -75,6 +84,21 @@ function App() {
              <Route path="/pannes/modifier/:id" element={
              <PrivateRoute><ModifierPanne /></PrivateRoute>
              } />
+             <Route path="/maintenances" element={
+             <PrivateRoute><Maintenances /></PrivateRoute>
+             } />
+             <Route path="/maintenances/ajouter" element={
+             <PrivateRoute><AjouterMaintenance /></PrivateRoute>
+             } />
+             <Route path="/demandes" element={
+             <PrivateRoute><Demandes /></PrivateRoute>
+             } />
+             <Route path="/demandes/ajouter" element={<PrivateRoute><AjouterDemande /></PrivateRoute>} />
+             <Route path="/demandes/modifier/:id" element={<PrivateRoute><ModifierDemande /></PrivateRoute>} />
+             <Route path="/demandes/:id" element={<PrivateRoute><DetailDemande /></PrivateRoute>} />
+             <Route path="/maintenances/modifier/:id" element={<ModifierMaintenance />} />
+             <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
+             <Route path="/rapports" element={<PrivateRoute><Rapports /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AuthProvider>

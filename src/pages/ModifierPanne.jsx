@@ -11,6 +11,7 @@ import { HiOutlineDesktopComputer } from 'react-icons/hi';
 import { MdOutlineAssignment, MdOutlineNotifications, MdOutlineDashboard } from 'react-icons/md';
 import { TbReportAnalytics, TbDeviceDesktop } from 'react-icons/tb';
 import { BsTools, BsFileText, BsPeople } from 'react-icons/bs';
+import { useAuth } from '../context/AuthContext';
 
 export default function ModifierPanne() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function ModifierPanne() {
   const prenom = localStorage.getItem('prenom');
   const email = localStorage.getItem('email');
   const role = localStorage.getItem('role');
+  const { notifCount } = useAuth();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [materiels, setMateriels] = useState([]);
@@ -33,6 +35,8 @@ export default function ModifierPanne() {
     statut: 'EN_ATTENTE',
     idMateriel: '',
     idBeneficiaire: '',
+    dateSignalement: '',
+    dateResolution: '',
   });
 
   const menuItems = [
@@ -43,7 +47,7 @@ export default function ModifierPanne() {
     { icon: <BsTools size={18} />, label: 'Maintenances', path: '/maintenances' },
     { icon: <BsFileText size={18} />, label: 'Demandes', path: '/demandes' },
     { icon: <BsPeople size={20} />, label: 'Utilisateurs', path: '/utilisateurs' },
-    { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: 3 },
+    { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: notifCount },
     { icon: <TbReportAnalytics size={20} />, label: 'Rapports', path: '/rapports' },
   ];
 
@@ -56,7 +60,6 @@ export default function ModifierPanne() {
   };
 
   useEffect(() => {
-    // Charger la panne existante
     api.get(`/api/pannes/${id}`)
       .then(res => {
         const p = res.data;
@@ -66,14 +69,14 @@ export default function ModifierPanne() {
           statut: p.statut || 'EN_ATTENTE',
           idMateriel: p.materiel?.id || '',
           idBeneficiaire: p.beneficiaire?.id || '',
+          dateSignalement: p.dateSignalement || '',
+          dateResolution: p.dateResolution || '',
         });
       })
       .catch(() => setError("Impossible de charger la panne."));
 
-    // Charger matériels
     api.get('/api/materiels').then(res => setMateriels(res.data)).catch(() => {});
 
-    // Charger bénéficiaires
     api.get('/api/utilisateurs')
       .then(res => setUtilisateurs(res.data.filter(u => u.role === 'BENEFICIAIRE')))
       .catch(() => {});
@@ -160,7 +163,7 @@ export default function ModifierPanne() {
         </nav>
 
         <div className="db-sidebar-bottom">
-          <div className="db-nav-item" onClick={() => { localStorage.clear(); navigate('/login'); }}>
+          <div className="db-nav-item" onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>
             <span className="db-nav-icon"><FiSettings size={20} /></span>
             {sidebarOpen && <span className="db-nav-label">Déconnexion</span>}
           </div>
@@ -192,7 +195,7 @@ export default function ModifierPanne() {
           <div className="db-topbar-right">
             <div className="db-notif-btn">
               <FiBell size={20} />
-              <span className="db-notif-badge">3</span>
+              {notifCount > 0 && <span className="db-notif-badge">{notifCount}</span>}
             </div>
             <div className="db-topbar-user">
               <div className="db-topbar-avatar" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>
@@ -289,6 +292,28 @@ export default function ModifierPanne() {
                     <option value="RESOLU">Résolu</option>
                     <option value="ESCALADEE">Escaladée</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Dates en lecture seule */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={labelStyle}>Date signalement</label>
+                  <input
+                    type="text"
+                    value={form.dateSignalement || '—'}
+                    disabled
+                    style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={labelStyle}>Date résolution</label>
+                  <input
+                    type="text"
+                    value={form.dateResolution || '—'}
+                    disabled
+                    style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }}
+                  />
                 </div>
               </div>
 

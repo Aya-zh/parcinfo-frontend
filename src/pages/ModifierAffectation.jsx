@@ -11,6 +11,7 @@ import { HiOutlineDesktopComputer } from 'react-icons/hi';
 import { MdOutlineAssignment, MdOutlineNotifications, MdOutlineDashboard } from 'react-icons/md';
 import { TbReportAnalytics, TbDeviceDesktop } from 'react-icons/tb';
 import { BsTools, BsFileText, BsPeople } from 'react-icons/bs';
+import { useAuth } from '../context/AuthContext';
 
 export default function ModifierAffectation() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function ModifierAffectation() {
   const prenom = localStorage.getItem('prenom');
   const email = localStorage.getItem('email');
   const role = localStorage.getItem('role');
+  const { notifCount } = useAuth();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [materiels, setMateriels] = useState([]);
@@ -46,7 +48,7 @@ export default function ModifierAffectation() {
     { icon: <BsTools size={18} />, label: 'Maintenances', path: '/maintenances' },
     { icon: <BsFileText size={18} />, label: 'Demandes', path: '/demandes' },
     { icon: <BsPeople size={20} />, label: 'Utilisateurs', path: '/utilisateurs' },
-    { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: 3 },
+    { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: notifCount },
     { icon: <TbReportAnalytics size={20} />, label: 'Rapports', path: '/rapports' },
   ];
 
@@ -189,7 +191,7 @@ export default function ModifierAffectation() {
         </nav>
 
         <div className="db-sidebar-bottom">
-          <div className="db-nav-item" onClick={() => { localStorage.clear(); navigate('/login'); }}>
+          <div className="db-nav-item" onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>
             <span className="db-nav-icon"><FiSettings size={20} /></span>
             {sidebarOpen && <span className="db-nav-label">Déconnexion</span>}
           </div>
@@ -219,7 +221,7 @@ export default function ModifierAffectation() {
           <div className="db-topbar-right">
             <div className="db-notif-btn">
               <FiBell size={20} />
-              <span className="db-notif-badge">3</span>
+              {notifCount > 0 && <span className="db-notif-badge">{notifCount}</span>}
             </div>
             <div className="db-topbar-user">
               <div className="db-topbar-avatar" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>

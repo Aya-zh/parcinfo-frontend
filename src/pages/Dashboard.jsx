@@ -29,10 +29,10 @@ const affectationsData = [
 ];
 
 const dernieresPannesStatic = [
-  { id: 'PC-023', desc: 'Écran noir', user: 'Jean Dupont', time: 'Il y a 1h', status: 'EN COURS', statusColor: '#F97316' },
-  { id: 'PC-067', desc: 'Ne démarre plus', user: 'Marie Martin', time: 'Il y a 3h', status: 'EN ATTENTE', statusColor: '#EAB308' },
-  { id: 'SRV-01', desc: 'Service inaccessible', user: 'Support IT', time: 'Il y a 5h', status: 'ESCALADÉE', statusColor: '#EF4444' },
-  { id: 'PC-045', desc: 'Problème réseau', user: 'Thomas Bernard', time: 'Il y a 1j', status: 'RÉSOLU', statusColor: '#22C55E' },
+  { id: 'PC-023', desc: 'Écran noir', user: 'Bennani Mehdi', time: 'Il y a 1h', status: 'EN COURS', statusColor: '#F97316' },
+  { id: 'PC-067', desc: 'Ne démarre plus', user: 'El Karimi Douaae', time: 'Il y a 3h', status: 'EN ATTENTE', statusColor: '#EAB308' },
+  { id: 'SRV-01', desc: 'Service inaccessible', user: 'Madini Adam', time: 'Il y a 5h', status: 'ESCALADÉE', statusColor: '#EF4444' },
+  { id: 'PC-045', desc: 'Problème réseau', user: 'Tazi Fatima', time: 'Il y a 1j', status: 'RÉSOLU', statusColor: '#22C55E' },
 ];
 
 const derniersMaterielsStatic = [
@@ -43,10 +43,10 @@ const derniersMaterielsStatic = [
 ];
 
 const dernieresAffectationsStatic = [
-  { nom: 'Jean Dupont', materiel: 'Laptop Dell Latitude 5440', date: '24 mai 2024', avatar: 'JD' },
-  { nom: 'Marie Martin', materiel: 'PC HP EliteDesk 800 G9', date: '23 mai 2024', avatar: 'MM' },
-  { nom: 'Thomas Bernard', materiel: 'Écran Lenovo ThinkVision', date: '22 mai 2024', avatar: 'TB' },
-  { nom: 'Sophie Leroy', materiel: 'Imprimante HP LaserJet Pro', date: '21 mai 2024', avatar: 'SL' },
+  { nom: 'El Karimi Douaae', materiel: 'Laptop Dell Latitude 5440', date: '24 mai 2024', avatar: 'ED' },
+  { nom: 'Tazi Fatima', materiel: 'PC HP EliteDesk 800 G9', date: '23 mai 2024', avatar: 'TF' },
+  { nom: 'Cherkaoui Omar', materiel: 'Écran Lenovo ThinkVision', date: '22 mai 2024', avatar: 'CO' },
+  { nom: 'Berrada Nadia', materiel: 'Imprimante HP LaserJet Pro', date: '21 mai 2024', avatar: 'BN' },
 ];
 
 export default function Dashboard() {
@@ -56,6 +56,7 @@ export default function Dashboard() {
   const nom = localStorage.getItem('nom');
   const prenom = localStorage.getItem('prenom');
   const role = localStorage.getItem('role');
+  const { notifCount } = useAuth();
 
   const [stats, setStats] = useState({
     totalMateriels: 124, enPanne: 8, affectes: 29, totalUtilisateurs: 15,
@@ -99,21 +100,21 @@ export default function Dashboard() {
   const pieData = [
     { name: 'Disponibles', value: stats.disponibles || 1, color: '#3B82F6' },
     { name: 'Affectés', value: stats.affectes || 1, color: '#06B6D4' },
-    { name: 'En Panne', value: stats.enPanne || 1, color: '#EF4444' },
+    { name: 'En Panne', value: stats.materielEnPanne || 1, color: '#EF4444' },
     { name: 'En Maintenance', value: stats.enMaintenance || 1, color: '#F59E0B' },
   ];
 
   const menuItems = [
-    { icon: <MdOutlineDashboard size={20} />, label: 'Dashboard', path: '/dashboard', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN', 'BENEFICIAIRE'] },
-    { icon: <HiOutlineDesktopComputer size={20} />, label: 'Matériels', path: '/materiels', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN'] },
-    { icon: <MdOutlineAssignment size={20} />, label: 'Affectations', path: '/affectations', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'BENEFICIAIRE'] },
-    { icon: <FiAlertTriangle size={20} />, label: 'Pannes', path: '/pannes', roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'BENEFICIAIRE'] },
-    { icon: <BsTools size={18} />, label: 'Maintenances', path: '/maintenances', roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
-    { icon: <BsFileText size={18} />, label: 'Demandes', path: '/demandes', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'BENEFICIAIRE'] },
-    { icon: <BsPeople size={20} />, label: 'Utilisateurs', path: '/utilisateurs', roles: ['ADMINISTRATEUR'] },
-    { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: 3, roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN', 'BENEFICIAIRE'] },
-    { icon: <TbReportAnalytics size={20} />, label: 'Rapports', path: '/rapports', roles: ['ADMINISTRATEUR', 'RESPONSABLE'] },
-  ].filter(item => item.roles.includes(role));
+  { icon: <MdOutlineDashboard size={20} />, label: 'Dashboard', path: '/dashboard', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN', 'BENEFICIAIRE'] },
+  { icon: <HiOutlineDesktopComputer size={20} />, label: 'Matériels', path: '/materiels', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN'] },
+  { icon: <MdOutlineAssignment size={20} />, label: 'Affectations', path: '/affectations', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'BENEFICIAIRE'] },
+  { icon: <FiAlertTriangle size={20} />, label: 'Pannes', path: '/pannes', roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'BENEFICIAIRE'] },
+  { icon: <BsTools size={18} />, label: 'Maintenances', path: '/maintenances', roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
+  { icon: <BsFileText size={18} />, label: 'Demandes', path: '/demandes', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'BENEFICIAIRE'] },
+  { icon: <BsPeople size={20} />, label: 'Utilisateurs', path: '/utilisateurs', roles: ['ADMINISTRATEUR'] },
+  { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: notifCount, roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN', 'BENEFICIAIRE'] },
+  { icon: <TbReportAnalytics size={20} />, label: 'Rapports', path: '/rapports', roles: ['ADMINISTRATEUR', 'RESPONSABLE'] },
+].filter(item => item.roles.includes(role));
 
   const getRoleLabel = () => {
     switch (role) {
@@ -410,7 +411,7 @@ export default function Dashboard() {
           <div className="db-topbar-right">
             <div className="db-notif-btn">
               <FiBell size={20} />
-              <span className="db-notif-badge">3</span>
+              {notifCount > 0 && <span className="db-notif-badge">{notifCount}</span>}
             </div>
             <div className="db-theme-toggle">
               <FiSun size={14} />

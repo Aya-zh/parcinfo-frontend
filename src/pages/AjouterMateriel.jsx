@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import '../styles/Dashboard.css';
 import '../styles/Materiels.css';
+import Sidebar from '../components/Sidebar';
 import {
-  FiMonitor, FiBell, FiChevronDown, FiChevronLeft,
-  FiChevronRight, FiHome, FiAlertTriangle, FiTool,
-  FiFileText, FiSettings, FiSave, FiX
+  FiBell, FiChevronDown, FiHome, FiSave, FiX
 } from 'react-icons/fi';
-import { HiOutlineUserGroup } from 'react-icons/hi';
-import { MdOutlineAssignment } from 'react-icons/md';
 
 export default function AjouterMateriel() {
   const navigate = useNavigate();
   const nom = localStorage.getItem('nom');
-  const prenom = localStorage.getItem('prenom');
-  const email = localStorage.getItem('email');
   const role = localStorage.getItem('role');
+  const { notifCount } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -37,23 +34,12 @@ export default function AjouterMateriel() {
     valeur: '',
   });
 
-  const menuItems = [
-    { icon: <FiMonitor size={20} />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <FiMonitor size={20} />, label: 'Matériels', path: '/materiels' },
-    { icon: <MdOutlineAssignment size={20} />, label: 'Affectations', path: '/affectations' },
-    { icon: <FiAlertTriangle size={20} />, label: 'Pannes', path: '/pannes' },
-    { icon: <FiTool size={20} />, label: 'Maintenances', path: '/maintenances' },
-    { icon: <FiFileText size={20} />, label: 'Demandes', path: '/demandes' },
-    { icon: <HiOutlineUserGroup size={20} />, label: 'Utilisateurs', path: '/utilisateurs' },
-    { icon: <FiBell size={20} />, label: 'Notifications', path: '/notifications', badge: 3 },
-    { icon: <FiFileText size={20} />, label: 'Rapports', path: '/rapports' },
-  ];
-
   const getRoleLabel = () => {
     switch (role) {
       case 'ADMINISTRATEUR': return 'Administrateur';
       case 'RESPONSABLE': return 'Responsable';
       case 'TECHNICIEN': return 'Technicien';
+      case 'BENEFICIAIRE': return 'Bénéficiaire';
       default: return 'Utilisateur';
     }
   };
@@ -100,54 +86,8 @@ export default function AjouterMateriel() {
   return (
     <div className="db-root">
 
-      {/* ── SIDEBAR ── */}
-      <aside className={`db-sidebar ${sidebarOpen ? '' : 'db-sidebar-closed'}`}>
-        <div className="db-sidebar-logo">
-          <div className="db-logo-icon"><FiMonitor size={20} color="#fff" /></div>
-          {sidebarOpen && (
-            <div>
-              <div className="db-logo-title">ParcInfo</div>
-              <div className="db-logo-sub">Gestion de Parc Informatique</div>
-            </div>
-          )}
-          <button className="db-collapse-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? <FiChevronLeft size={16} /> : <FiChevronRight size={16} />}
-          </button>
-        </div>
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeLabel="Matériels" />
 
-        <nav className="db-nav">
-          {menuItems.map((item) => (
-            <div
-              key={item.label}
-              className={`db-nav-item ${item.label === 'Matériels' ? 'db-nav-active' : ''}`}
-              onClick={() => navigate(item.path)}
-            >
-              <span className="db-nav-icon">{item.icon}</span>
-              {sidebarOpen && <span className="db-nav-label">{item.label}</span>}
-              {sidebarOpen && item.badge && <span className="db-badge">{item.badge}</span>}
-            </div>
-          ))}
-        </nav>
-
-        <div className="db-sidebar-bottom">
-          <div className="db-nav-item" onClick={() => { localStorage.clear(); navigate('/login'); }}>
-            <span className="db-nav-icon"><FiSettings size={20} /></span>
-            {sidebarOpen && <span className="db-nav-label">Déconnexion</span>}
-          </div>
-          {sidebarOpen && (
-            <div className="db-user-card">
-              <div className="db-user-avatar">{nom ? nom.charAt(0).toUpperCase() : 'A'}</div>
-              <div>
-                <div className="db-user-name">{nom} {prenom}</div>
-                <div className="db-user-email">{email}</div>
-              </div>
-              <FiChevronDown size={14} color="#64748b" />
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* ── MAIN ── */}
       <main className="db-main">
         <header className="db-topbar">
           <div className="db-search">
@@ -156,10 +96,12 @@ export default function AjouterMateriel() {
           <div className="db-topbar-right">
             <div className="db-notif-btn">
               <FiBell size={20} />
-              <span className="db-notif-badge">3</span>
+              {notifCount > 0 && <span className="db-notif-badge">{notifCount}</span>}
             </div>
             <div className="db-topbar-user">
-              <div className="db-topbar-avatar">{nom ? nom.charAt(0).toUpperCase() : 'A'}</div>
+              <div className="db-topbar-avatar" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>
+                {nom ? nom.charAt(0).toUpperCase() : 'A'}
+              </div>
               <span>{getRoleLabel()}</span>
               <FiChevronDown size={14} />
             </div>
@@ -184,7 +126,6 @@ export default function AjouterMateriel() {
           <div className="mat-form-card">
             <form onSubmit={handleSubmit}>
 
-              {/* ── SECTION 1 ── */}
               <div className="mat-form-section-title">Informations générales</div>
               <div className="mat-form-grid">
 
@@ -265,7 +206,6 @@ export default function AjouterMateriel() {
 
               </div>
 
-              {/* ── SECTION 2 ── */}
               <div className="mat-form-section-title" style={{ marginTop: '1.75rem' }}>Détails supplémentaires</div>
               <div className="mat-form-grid">
 
@@ -322,7 +262,6 @@ export default function AjouterMateriel() {
                   />
                 </div>
 
-                {/* Description — pleine largeur */}
                 <div className="mat-form-group" style={{ gridColumn: '1 / -1' }}>
                   <label>Description</label>
                   <textarea
@@ -334,7 +273,6 @@ export default function AjouterMateriel() {
                   />
                 </div>
 
-                {/* Commentaire — pleine largeur */}
                 <div className="mat-form-group" style={{ gridColumn: '1 / -1' }}>
                   <label>Commentaire</label>
                   <textarea
@@ -348,7 +286,6 @@ export default function AjouterMateriel() {
 
               </div>
 
-              {/* ── ACTIONS ── */}
               <div className="mat-form-actions">
                 <button type="button" className="mat-btn-cancel" onClick={() => navigate('/materiels')}>
                   <FiX size={16} /> Annuler

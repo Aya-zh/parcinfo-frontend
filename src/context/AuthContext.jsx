@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 
@@ -15,7 +15,26 @@ export function AuthProvider({ children }) {
     return token ? { token, email, role, nom, prenom, userId } : null;
   });
 
+  const [notifCount, setNotifCount] = useState(0);
   const navigate = useNavigate();
+
+  const fetchNotifCount = (role, userId) => {
+    const url = role === 'ADMINISTRATEUR'
+      ? '/api/notifications'
+      : `/api/notifications/utilisateur/${userId}`;
+    api.get(url)
+      .then(res => {
+        const nonLues = res.data.filter(n => !n.lu).length;
+        setNotifCount(nonLues);
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifCount(user.role, user.userId);
+    }
+  }, [user]);
 
   const login = async (email, motDePasse) => {
     const response = await api.post('/api/auth/login', { email, motDePasse });
@@ -29,6 +48,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('userId', id);
 
     setUser({ token, email, role, nom, prenom, userId: id });
+    fetchNotifCount(role, id);
 
     if (role === 'ADMINISTRATEUR') navigate('/dashboard');
     else if (role === 'RESPONSABLE') navigate('/dashboard');
@@ -45,11 +65,12 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('prenom');
     localStorage.removeItem('userId');
     setUser(null);
+    setNotifCount(0);
     navigate('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, notifCount, setNotifCount }}>
       {children}
     </AuthContext.Provider>
   );

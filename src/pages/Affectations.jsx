@@ -3,16 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import '../styles/Dashboard.css';
 import '../styles/Materiels.css';
+import Sidebar from '../components/Sidebar';
 import {
   FiSearch, FiPlus, FiEye, FiEdit2, FiTrash2,
   FiBell, FiChevronDown, FiChevronLeft,
-  FiChevronRight, FiHome, FiAlertTriangle,
-  FiFileText, FiSettings
+  FiChevronRight, FiHome
 } from 'react-icons/fi';
-import { HiOutlineDesktopComputer } from 'react-icons/hi';
-import { MdOutlineAssignment, MdOutlineNotifications, MdOutlineDashboard } from 'react-icons/md';
-import { TbReportAnalytics, TbDeviceDesktop } from 'react-icons/tb';
-import { BsTools, BsFileText, BsPeople } from 'react-icons/bs';
+import { useAuth } from '../context/AuthContext';
 
 const ITEMS_PER_PAGE = 7;
 
@@ -22,6 +19,7 @@ export default function Affectations() {
   const prenom = localStorage.getItem('prenom');
   const email = localStorage.getItem('email');
   const role = localStorage.getItem('role');
+  const { notifCount } = useAuth();
   const userId = localStorage.getItem('userId');
 
   const [affectations, setAffectations] = useState([]);
@@ -30,18 +28,6 @@ export default function Affectations() {
   const [activeFilter, setActiveFilter] = useState('Tous');
   const [currentPage, setCurrentPage] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  const menuItems = [
-    { icon: <MdOutlineDashboard size={20} />, label: 'Dashboard', path: '/dashboard', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN', 'BENEFICIAIRE'] },
-    { icon: <HiOutlineDesktopComputer size={20} />, label: 'Matériels', path: '/materiels', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN'] },
-    { icon: <MdOutlineAssignment size={20} />, label: 'Affectations', path: '/affectations', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'BENEFICIAIRE'] },
-    { icon: <FiAlertTriangle size={20} />, label: 'Pannes', path: '/pannes', roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'BENEFICIAIRE'] },
-    { icon: <BsTools size={18} />, label: 'Maintenances', path: '/maintenances', roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
-    { icon: <BsFileText size={18} />, label: 'Demandes', path: '/demandes', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'BENEFICIAIRE'] },
-    { icon: <BsPeople size={20} />, label: 'Utilisateurs', path: '/utilisateurs', roles: ['ADMINISTRATEUR'] },
-    { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: 3, roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN', 'BENEFICIAIRE'] },
-    { icon: <TbReportAnalytics size={20} />, label: 'Rapports', path: '/rapports', roles: ['ADMINISTRATEUR', 'RESPONSABLE'] },
-  ].filter(item => item.roles.includes(role));
 
   const getRoleLabel = () => {
     switch (role) {
@@ -130,63 +116,9 @@ export default function Affectations() {
   return (
     <div className="db-root">
 
-      {/* ── SIDEBAR ── */}
-      <aside className={`db-sidebar ${sidebarOpen ? '' : 'db-sidebar-closed'}`}>
-        <div className="db-sidebar-logo">
-          <div className="db-logo-icon">
-            <TbDeviceDesktop size={22} color="#fff" />
-          </div>
-          {sidebarOpen && (
-            <div>
-              <div className="db-logo-title">ParcInfo</div>
-              <div className="db-logo-sub">Gestion de Parc Informatique</div>
-            </div>
-          )}
-          <button className="db-collapse-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? <FiChevronLeft size={16} /> : <FiChevronRight size={16} />}
-          </button>
-        </div>
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeLabel="Affectations" />
 
-        <nav className="db-nav">
-          {menuItems.map((item) => (
-            <div
-              key={item.label}
-              className={`db-nav-item ${item.label === 'Affectations' ? 'db-nav-active' : ''}`}
-              onClick={() => navigate(item.path)}
-            >
-              <span className="db-nav-icon">{item.icon}</span>
-              {sidebarOpen && <span className="db-nav-label">{item.label}</span>}
-              {sidebarOpen && item.badge && (
-                <span className="db-badge">{item.badge}</span>
-              )}
-            </div>
-          ))}
-        </nav>
-
-        <div className="db-sidebar-bottom">
-          <div className="db-nav-item" onClick={() => { localStorage.clear(); navigate('/login'); }}>
-            <span className="db-nav-icon"><FiSettings size={20} /></span>
-            {sidebarOpen && <span className="db-nav-label">Déconnexion</span>}
-          </div>
-          {sidebarOpen && (
-            <div className="db-user-card">
-              <div className="db-user-avatar" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>
-                {nom ? nom.charAt(0).toUpperCase() : 'A'}
-              </div>
-              <div>
-                <div className="db-user-name">{nom} {prenom}</div>
-                <div className="db-user-email">{email}</div>
-              </div>
-              <FiChevronDown size={14} color="#64748b" />
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* ── MAIN ── */}
       <main className="db-main">
-
-        {/* ── TOPBAR ── */}
         <header className="db-topbar">
           <div className="db-search">
             <FiSearch size={16} color="#64748b" />
@@ -196,7 +128,7 @@ export default function Affectations() {
           <div className="db-topbar-right">
             <div className="db-notif-btn">
               <FiBell size={20} />
-              <span className="db-notif-badge">3</span>
+              {notifCount > 0 && <span className="db-notif-badge">{notifCount}</span>}
             </div>
             <div className="db-topbar-user">
               <div className="db-topbar-avatar" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>
@@ -208,9 +140,7 @@ export default function Affectations() {
           </div>
         </header>
 
-        {/* ── CONTENT ── */}
         <div className="db-content">
-
           <div className="mat-header">
             <div>
               <h1 className="mat-title">
@@ -218,10 +148,8 @@ export default function Affectations() {
               </h1>
               <div className="mat-breadcrumb">
                 <FiHome size={13} />
-                <span
-                  style={{ cursor: 'pointer', color: '#3B82F6' }}
-                  onClick={() => navigate('/dashboard')}
-                >Accueil</span>
+                <span style={{ cursor: 'pointer', color: '#3B82F6' }}
+                  onClick={() => navigate('/dashboard')}>Accueil</span>
                 <span className="mat-sep">/</span>
                 <span className="mat-bc-active">Affectations</span>
               </div>
@@ -355,16 +283,21 @@ export default function Affectations() {
               Affichage {filtered.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} sur {filtered.length}
             </span>
             <div className="mat-pag-btns">
-              <button className="mat-pag-btn" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+              <button className="mat-pag-btn"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}>
                 <FiChevronLeft size={16} />
               </button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                <button key={p} className={`mat-pag-btn ${currentPage === p ? 'mat-pag-active' : ''}`}
+                <button key={p}
+                  className={`mat-pag-btn ${currentPage === p ? 'mat-pag-active' : ''}`}
                   onClick={() => setCurrentPage(p)}>
                   {p}
                 </button>
               ))}
-              <button className="mat-pag-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+              <button className="mat-pag-btn"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}>
                 <FiChevronRight size={16} />
               </button>
             </div>

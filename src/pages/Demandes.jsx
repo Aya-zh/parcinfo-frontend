@@ -16,7 +16,7 @@ import { useAuth } from '../context/AuthContext';
 
 const ITEMS_PER_PAGE = 7;
 
-export default function Utilisateurs() {
+export default function Demandes() {
   const navigate = useNavigate();
   const nom = localStorage.getItem('nom');
   const prenom = localStorage.getItem('prenom');
@@ -24,7 +24,7 @@ export default function Utilisateurs() {
   const role = localStorage.getItem('role');
   const { notifCount } = useAuth();
 
-  const [utilisateurs, setUtilisateurs] = useState([]);
+  const [demandes, setDemandes] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('Tous');
@@ -32,18 +32,17 @@ export default function Utilisateurs() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const menuItems = [
-    { icon: <MdOutlineDashboard size={20} />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <HiOutlineDesktopComputer size={20} />, label: 'Matériels', path: '/materiels' },
-    { icon: <MdOutlineAssignment size={20} />, label: 'Affectations', path: '/affectations' },
-    { icon: <FiAlertTriangle size={20} />, label: 'Pannes', path: '/pannes' },
-    { icon: <BsTools size={18} />, label: 'Maintenances', path: '/maintenances' },
-    { icon: <BsFileText size={18} />, label: 'Demandes', path: '/demandes' },
-    { icon: <BsPeople size={20} />, label: 'Utilisateurs', path: '/utilisateurs' },
-    { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: notifCount },
-    { icon: <TbReportAnalytics size={20} />, label: 'Rapports', path: '/rapports' },
-  ];
+const menuItems = [
+  { icon: <MdOutlineDashboard size={20} />, label: 'Dashboard', path: '/dashboard', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN', 'BENEFICIAIRE'] },
+  { icon: <HiOutlineDesktopComputer size={20} />, label: 'Matériels', path: '/materiels', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN'] },
+  { icon: <MdOutlineAssignment size={20} />, label: 'Affectations', path: '/affectations', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'BENEFICIAIRE'] },
+  { icon: <FiAlertTriangle size={20} />, label: 'Pannes', path: '/pannes', roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'BENEFICIAIRE'] },
+  { icon: <BsTools size={18} />, label: 'Maintenances', path: '/maintenances', roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
+  { icon: <BsFileText size={18} />, label: 'Demandes', path: '/demandes', roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'BENEFICIAIRE'] },
+  { icon: <BsPeople size={20} />, label: 'Utilisateurs', path: '/utilisateurs', roles: ['ADMINISTRATEUR'] },
+  { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: notifCount, roles: ['ADMINISTRATEUR', 'RESPONSABLE', 'TECHNICIEN', 'BENEFICIAIRE'] },
+  { icon: <TbReportAnalytics size={20} />, label: 'Rapports', path: '/rapports', roles: ['ADMINISTRATEUR', 'RESPONSABLE'] },
+].filter(item => item.roles.includes(role));
 
   const getRoleLabel = () => {
     switch (role) {
@@ -55,69 +54,73 @@ export default function Utilisateurs() {
     }
   };
 
-  const getRoleBadgeClass = (r) => {
-    switch (r) {
-      case 'ADMINISTRATEUR': return 'mat-badge-red';
-      case 'RESPONSABLE': return 'mat-badge-orange';
-      case 'TECHNICIEN': return 'mat-badge-blue';
-      case 'BENEFICIAIRE': return 'mat-badge-green';
-      default: return '';
-    }
+  const getStatutClass = (statut) => {
+    const map = {
+      EN_ATTENTE: 'mat-badge-orange',
+      APPROUVEE: 'mat-badge-green',
+      REFUSEE: 'mat-badge-red',
+      EN_COURS: 'mat-badge-blue',
+      TRAITEE: 'mat-badge-green',
+    };
+    return map[statut] || '';
   };
 
-  const getRoleDisplayLabel = (r) => {
-    switch (r) {
-      case 'ADMINISTRATEUR': return 'Administrateur';
-      case 'RESPONSABLE': return 'Responsable';
-      case 'TECHNICIEN': return 'Technicien';
-      case 'BENEFICIAIRE': return 'Bénéficiaire';
-      default: return r;
-    }
+  const getStatutLabel = (statut) => {
+    const map = {
+      EN_ATTENTE: 'En attente',
+      APPROUVEE: 'Approuvée',
+      REFUSEE: 'Refusée',
+      EN_COURS: 'En cours',
+      TRAITEE: 'Traitée',
+    };
+    return map[statut] || statut;
+  };
+
+  const getPrioriteClass = (priorite) => {
+    const map = {
+      FAIBLE: 'mat-badge-green',
+      MOYENNE: 'mat-badge-orange',
+      HAUTE: 'mat-badge-red',
+    };
+    return map[priorite] || '';
   };
 
   useEffect(() => {
-    api.get('/api/utilisateurs')
-      .then(res => {
-        setUtilisateurs(res.data);
-        setFiltered(res.data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Impossible de charger les utilisateurs.");
-        setLoading(false);
-      });
+    api.get('/api/demandes')
+      .then(res => { setDemandes(res.data); setFiltered(res.data); setLoading(false); })
+      .catch(() => { setError("Impossible de charger les demandes."); setLoading(false); });
   }, []);
 
   useEffect(() => {
-    let result = utilisateurs;
+    let result = demandes;
     if (activeFilter !== 'Tous') {
       const map = {
-        'Administrateur': 'ADMINISTRATEUR',
-        'Responsable': 'RESPONSABLE',
-        'Technicien': 'TECHNICIEN',
-        'Bénéficiaire': 'BENEFICIAIRE',
+        'En attente': 'EN_ATTENTE',
+        'Approuvée': 'APPROUVEE',
+        'Refusée': 'REFUSEE',
+        'Traitée': 'TRAITEE',
       };
-      result = result.filter(u => u.role === map[activeFilter]);
+      result = result.filter(d => d.statut === map[activeFilter]);
     }
     if (search) {
-      result = result.filter(u =>
-        u.nom?.toLowerCase().includes(search.toLowerCase()) ||
-        u.prenom?.toLowerCase().includes(search.toLowerCase()) ||
-        u.email?.toLowerCase().includes(search.toLowerCase())
+      result = result.filter(d =>
+        d.objet?.toLowerCase().includes(search.toLowerCase()) ||
+        d.beneficiaire?.nom?.toLowerCase().includes(search.toLowerCase()) ||
+        d.beneficiaire?.prenom?.toLowerCase().includes(search.toLowerCase())
       );
     }
     setFiltered(result);
     setCurrentPage(1);
-  }, [search, activeFilter, utilisateurs]);
+  }, [search, activeFilter, demandes]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const handleDelete = async (id) => {
-    if (window.confirm('Supprimer cet utilisateur ?')) {
+    if (window.confirm('Supprimer cette demande ?')) {
       try {
-        await api.delete(`/api/utilisateurs/${id}`);
-        setUtilisateurs(prev => prev.filter(u => u.id !== id));
+        await api.delete(`/api/demandes/${id}`);
+        setDemandes(prev => prev.filter(d => d.id !== id));
       } catch (err) {
         alert("Erreur lors de la suppression.");
       }
@@ -148,7 +151,7 @@ export default function Utilisateurs() {
           {menuItems.map((item) => (
             <div
               key={item.label}
-              className={`db-nav-item ${item.label === 'Utilisateurs' ? 'db-nav-active' : ''}`}
+              className={`db-nav-item ${item.label === 'Demandes' ? 'db-nav-active' : ''}`}
               onClick={() => navigate(item.path)}
             >
               <span className="db-nav-icon">{item.icon}</span>
@@ -208,62 +211,54 @@ export default function Utilisateurs() {
         {/* ── CONTENT ── */}
         <div className="db-content">
 
-          {/* ── HEADER PAGE ── */}
           <div className="mat-header">
             <div>
-              <h1 className="mat-title">Gestion des Utilisateurs</h1>
+              <h1 className="mat-title">Gestion des Demandes</h1>
               <div className="mat-breadcrumb">
                 <FiHome size={13} />
-                <span
-                  style={{ cursor: 'pointer', color: '#3B82F6' }}
-                  onClick={() => navigate('/dashboard')}
-                >Accueil</span>
+                <span style={{ cursor: 'pointer', color: '#3B82F6' }}
+                  onClick={() => navigate('/dashboard')}>Accueil</span>
                 <span className="mat-sep">/</span>
-                <span className="mat-bc-active">Utilisateurs</span>
+                <span className="mat-bc-active">Demandes</span>
               </div>
             </div>
           </div>
 
-          {/* ── TOOLBAR ── */}
           <div className="mat-toolbar">
             <div className="mat-search">
               <FiSearch size={16} color="#64748b" />
               <input
-                placeholder="Rechercher un utilisateur..."
+                placeholder="Rechercher une demande..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
-            <button className="mat-btn-add" onClick={() => navigate('/utilisateurs/ajouter')}>
-              <FiPlus size={18} /> Ajouter un utilisateur
+            <button className="mat-btn-add" onClick={() => navigate('/demandes/ajouter')}>
+              <FiPlus size={18} /> Nouvelle demande
             </button>
           </div>
 
-          {/* ── FILTERS ── */}
           <div className="mat-filters">
-            {['Tous', 'Administrateur', 'Responsable', 'Technicien', 'Bénéficiaire'].map(f => (
+            {['Tous', 'En attente', 'Approuvée', 'Refusée', 'Traitée'].map(f => (
               <button
                 key={f}
                 className={`mat-filter-btn ${activeFilter === f ? 'mat-filter-active' : ''}`}
                 style={{
                   border: activeFilter === f ? 'none' :
-                    f === 'Administrateur' ? '1px solid #EF4444' :
-                    f === 'Responsable' ? '1px solid #F59E0B' :
-                    f === 'Technicien' ? '1px solid #3B82F6' :
-                    f === 'Bénéficiaire' ? '1px solid #22C55E' :
+                    f === 'En attente' ? '1px solid #F59E0B' :
+                    f === 'Approuvée' ? '1px solid #22C55E' :
+                    f === 'Refusée' ? '1px solid #EF4444' :
+                    f === 'Traitée' ? '1px solid #3B82F6' :
                     '1px solid #1A2B4A',
                   color: activeFilter === f ? '#fff' :
-                    f === 'Administrateur' ? '#EF4444' :
-                    f === 'Responsable' ? '#F59E0B' :
-                    f === 'Technicien' ? '#3B82F6' :
-                    f === 'Bénéficiaire' ? '#22C55E' :
+                    f === 'En attente' ? '#F59E0B' :
+                    f === 'Approuvée' ? '#22C55E' :
+                    f === 'Refusée' ? '#EF4444' :
+                    f === 'Traitée' ? '#3B82F6' :
                     '#64748b',
                   background: activeFilter === f ? '#2563EB' : 'transparent',
-                  padding: '8px 20px',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
+                  padding: '8px 20px', borderRadius: '8px',
+                  fontSize: '14px', fontWeight: '500', cursor: 'pointer',
                 }}
                 onClick={() => setActiveFilter(f)}
               >
@@ -272,84 +267,77 @@ export default function Utilisateurs() {
             ))}
           </div>
 
-          {/* ── TABLE ── */}
           <div className="mat-table-wrap">
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
-                Chargement...
-              </div>
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>Chargement...</div>
             ) : error ? (
-              <div style={{ textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
-                {error}
-              </div>
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#ef4444' }}>{error}</div>
             ) : (
               <table className="mat-table">
                 <thead>
                   <tr>
-                    <th>Utilisateur</th>
-                    <th>Email</th>
-                    <th>Rôle</th>
+                    <th>Objet</th>
+                    <th>Bénéficiaire</th>
+                    <th>Responsable</th>
+                    <th>Priorité</th>
                     <th>Statut</th>
+                    <th>Date demande</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginated.length === 0 ? (
                     <tr>
-                      <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
-                        Aucun utilisateur trouvé
+                      <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                        Aucune demande trouvée
                       </td>
                     </tr>
-                  ) : paginated.map((u, i) => (
-                    <tr key={u.id || i}>
+                  ) : paginated.map((d, i) => (
+                    <tr key={d.id || i}>
+                      <td style={{ color: '#fff', fontWeight: '500' }}>{d.objet}</td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <div style={{
-                            width: '36px', height: '36px', borderRadius: '50%',
+                            width: '28px', height: '28px', borderRadius: '50%',
                             background: `hsl(${i * 60 + 200}, 70%, 40%)`,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '13px', fontWeight: '700', color: '#fff', flexShrink: 0
+                            fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0
                           }}>
-                            {u.nom?.charAt(0)}{u.prenom?.charAt(0)}
+                            {d.beneficiaire?.nom?.charAt(0)}{d.beneficiaire?.prenom?.charAt(0)}
                           </div>
-                          <div>
-                            <div style={{ color: '#fff', fontWeight: '600', fontSize: '13px' }}>
-                              {u.nom} {u.prenom}
-                            </div>
-                          </div>
+                          <span>{d.beneficiaire?.nom} {d.beneficiaire?.prenom}</span>
                         </div>
                       </td>
-                      <td>{u.email}</td>
+                      <td>{d.responsable?.nom} {d.responsable?.prenom}</td>
                       <td>
-                        <span className={`mat-badge ${getRoleBadgeClass(u.role)}`}>
-                          {getRoleDisplayLabel(u.role)}
+                        <span className={`mat-badge ${getPrioriteClass(d.priorite)}`}>
+                          {d.priorite}
                         </span>
                       </td>
                       <td>
-                        <span className={`mat-badge ${u.actif ? 'mat-badge-green' : 'mat-badge-red'}`}>
-                          {u.actif ? 'Actif' : 'Inactif'}
+                        <span className={`mat-badge ${getStatutClass(d.statut)}`}>
+                          {getStatutLabel(d.statut)}
                         </span>
                       </td>
+                      <td>{d.dateDemande}</td>
                       <td>
                         <div className="mat-actions">
-                          <button
-                            className="mat-action-btn mat-action-view"
-                            onClick={() => navigate(`/utilisateurs/${u.id}`)}
-                          >
+                          <button className="mat-action-btn mat-action-view"
+                            onClick={() => navigate(`/demandes/${d.id}`)}>
                             <FiEye size={15} />
                           </button>
-                          <button
-                            className="mat-action-btn mat-action-edit"
-                            onClick={() => navigate(`/utilisateurs/modifier/${u.id}`)}
-                          >
-                            <FiEdit2 size={15} />
-                          </button>
-                          <button
-                            className="mat-action-btn mat-action-delete"
-                            onClick={() => handleDelete(u.id)}
-                          >
-                            <FiTrash2 size={15} />
-                          </button>
+                          {(role === 'ADMINISTRATEUR' || role === 'RESPONSABLE') && (
+                            <>
+                              <button className="mat-action-btn mat-action-edit"
+                                onClick={() => navigate(`/demandes/modifier/${d.id}`)}>
+                                <FiEdit2 size={15} />
+                              </button>
+                              <button className="mat-action-btn mat-action-delete"
+                                onClick={() => handleDelete(d.id)}>
+                                <FiTrash2 size={15} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -359,34 +347,26 @@ export default function Utilisateurs() {
             )}
           </div>
 
-          {/* ── PAGINATION ── */}
           {!loading && !error && filtered.length > 0 && (
             <div className="mat-pagination">
               <span className="mat-pag-info">
                 Affichage {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} sur {filtered.length}
               </span>
               <div className="mat-pag-btns">
-                <button
-                  className="mat-pag-btn"
+                <button className="mat-pag-btn"
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
+                  disabled={currentPage === 1}>
                   <FiChevronLeft size={16} />
                 </button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                  <button
-                    key={p}
-                    className={`mat-pag-btn ${currentPage === p ? 'mat-pag-active' : ''}`}
-                    onClick={() => setCurrentPage(p)}
-                  >
+                  <button key={p} className={`mat-pag-btn ${currentPage === p ? 'mat-pag-active' : ''}`}
+                    onClick={() => setCurrentPage(p)}>
                     {p}
                   </button>
                 ))}
-                <button
-                  className="mat-pag-btn"
+                <button className="mat-pag-btn"
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                >
+                  disabled={currentPage === totalPages}>
                   <FiChevronRight size={16} />
                 </button>
               </div>

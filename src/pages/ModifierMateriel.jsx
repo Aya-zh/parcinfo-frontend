@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import '../styles/Dashboard.css';
@@ -18,6 +19,7 @@ export default function ModifierMateriel() {
   const prenom = localStorage.getItem('prenom');
   const email = localStorage.getItem('email');
   const role = localStorage.getItem('role');
+  const { notifCount } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -47,7 +49,7 @@ export default function ModifierMateriel() {
     { icon: <FiTool size={20} />, label: 'Maintenances', path: '/maintenances' },
     { icon: <FiFileText size={20} />, label: 'Demandes', path: '/demandes' },
     { icon: <HiOutlineUserGroup size={20} />, label: 'Utilisateurs', path: '/utilisateurs' },
-    { icon: <FiBell size={20} />, label: 'Notifications', path: '/notifications', badge: 3 },
+    { icon: <FiBell size={20} />, label: 'Notifications', path: '/notifications', badge: notifCount },
     { icon: <FiFileText size={20} />, label: 'Rapports', path: '/rapports' },
   ];
 
@@ -167,7 +169,7 @@ export default function ModifierMateriel() {
         </nav>
 
         <div className="db-sidebar-bottom">
-          <div className="db-nav-item" onClick={() => { localStorage.clear(); navigate('/login'); }}>
+          <div className="db-nav-item" onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>
             <span className="db-nav-icon"><FiSettings size={20} /></span>
             {sidebarOpen && <span className="db-nav-label">Déconnexion</span>}
           </div>
@@ -193,7 +195,7 @@ export default function ModifierMateriel() {
           <div className="db-topbar-right">
             <div className="db-notif-btn">
               <FiBell size={20} />
-              <span className="db-notif-badge">3</span>
+              {notifCount > 0 && <span className="db-notif-badge">{notifCount}</span>}
             </div>
             <div className="db-topbar-user">
               <div className="db-topbar-avatar">{nom ? nom.charAt(0).toUpperCase() : 'A'}</div>
