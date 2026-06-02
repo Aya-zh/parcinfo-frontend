@@ -3,15 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import '../styles/Dashboard.css';
 import '../styles/Materiels.css';
+import Sidebar from '../components/Sidebar';
 import {
   FiSearch, FiPlus, FiEye, FiEdit2, FiTrash2,
   FiBell, FiChevronDown, FiChevronLeft,
-  FiChevronRight, FiHome, FiAlertTriangle, FiSettings
+  FiChevronRight, FiHome
 } from 'react-icons/fi';
-import { HiOutlineDesktopComputer } from 'react-icons/hi';
-import { MdOutlineAssignment, MdOutlineNotifications, MdOutlineDashboard } from 'react-icons/md';
-import { TbReportAnalytics, TbDeviceDesktop } from 'react-icons/tb';
-import { BsTools, BsFileText, BsPeople } from 'react-icons/bs';
 import { useAuth } from '../context/AuthContext';
 
 const ITEMS_PER_PAGE = 7;
@@ -19,8 +16,6 @@ const ITEMS_PER_PAGE = 7;
 export default function Maintenances() {
   const navigate = useNavigate();
   const nom = localStorage.getItem('nom');
-  const prenom = localStorage.getItem('prenom');
-  const email = localStorage.getItem('email');
   const role = localStorage.getItem('role');
   const { notifCount } = useAuth();
 
@@ -32,18 +27,6 @@ export default function Maintenances() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const menuItems = [
-    { icon: <MdOutlineDashboard size={20} />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <HiOutlineDesktopComputer size={20} />, label: 'Matériels', path: '/materiels' },
-    { icon: <MdOutlineAssignment size={20} />, label: 'Affectations', path: '/affectations' },
-    { icon: <FiAlertTriangle size={20} />, label: 'Pannes', path: '/pannes' },
-    { icon: <BsTools size={18} />, label: 'Maintenances', path: '/maintenances' },
-    { icon: <BsFileText size={18} />, label: 'Demandes', path: '/demandes' },
-    { icon: <BsPeople size={20} />, label: 'Utilisateurs', path: '/utilisateurs' },
-    { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: notifCount },
-    { icon: <TbReportAnalytics size={20} />, label: 'Rapports', path: '/rapports' },
-  ];
 
   const getRoleLabel = () => {
     switch (role) {
@@ -62,13 +45,8 @@ export default function Maintenances() {
     }
   };
 
-  const getStatutClass = (dateFin) => {
-    return dateFin ? 'mat-badge-green' : 'mat-badge-orange';
-  };
-
-  const getStatutLabel = (dateFin) => {
-    return dateFin ? 'Terminée' : 'En cours';
-  };
+  const getStatutClass = (dateFin) => dateFin ? 'mat-badge-green' : 'mat-badge-orange';
+  const getStatutLabel = (dateFin) => dateFin ? 'Terminée' : 'En cours';
 
   useEffect(() => {
     api.get('/api/maintenances')
@@ -78,12 +56,10 @@ export default function Maintenances() {
 
   useEffect(() => {
     let result = maintenances;
-    if (activeFilter !== 'Tous') {
-      if (activeFilter === 'En cours') result = result.filter(m => !m.dateFin);
-      if (activeFilter === 'Terminée') result = result.filter(m => m.dateFin);
-      if (activeFilter === 'Préventive') result = result.filter(m => m.type === 'Préventive');
-      if (activeFilter === 'Corrective') result = result.filter(m => m.type === 'Corrective');
-    }
+    if (activeFilter === 'En cours') result = result.filter(m => !m.dateFin);
+    else if (activeFilter === 'Terminée') result = result.filter(m => m.dateFin);
+    else if (activeFilter === 'Préventive') result = result.filter(m => m.type === 'Préventive');
+    else if (activeFilter === 'Corrective') result = result.filter(m => m.type === 'Corrective');
     if (search) {
       result = result.filter(m =>
         m.description?.toLowerCase().includes(search.toLowerCase()) ||
@@ -103,72 +79,15 @@ export default function Maintenances() {
       try {
         await api.delete(`/api/maintenances/${id}`);
         setMaintenances(prev => prev.filter(m => m.id !== id));
-      } catch (err) {
-        alert("Erreur lors de la suppression.");
-      }
+      } catch { alert("Erreur lors de la suppression."); }
     }
   };
 
   return (
     <div className="db-root">
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeLabel="Maintenances" />
 
-      {/* ── SIDEBAR ── */}
-      <aside className={`db-sidebar ${sidebarOpen ? '' : 'db-sidebar-closed'}`}>
-        <div className="db-sidebar-logo">
-          <div className="db-logo-icon">
-            <TbDeviceDesktop size={22} color="#fff" />
-          </div>
-          {sidebarOpen && (
-            <div>
-              <div className="db-logo-title">ParcInfo</div>
-              <div className="db-logo-sub">Gestion de Parc Informatique</div>
-            </div>
-          )}
-          <button className="db-collapse-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? <FiChevronLeft size={16} /> : <FiChevronRight size={16} />}
-          </button>
-        </div>
-
-        <nav className="db-nav">
-          {menuItems.map((item) => (
-            <div
-              key={item.label}
-              className={`db-nav-item ${item.label === 'Maintenances' ? 'db-nav-active' : ''}`}
-              onClick={() => navigate(item.path)}
-            >
-              <span className="db-nav-icon">{item.icon}</span>
-              {sidebarOpen && <span className="db-nav-label">{item.label}</span>}
-              {sidebarOpen && item.badge && (
-                <span className="db-badge">{item.badge}</span>
-              )}
-            </div>
-          ))}
-        </nav>
-
-        <div className="db-sidebar-bottom">
-          <div className="db-nav-item" onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>
-            <span className="db-nav-icon"><FiSettings size={20} /></span>
-            {sidebarOpen && <span className="db-nav-label">Déconnexion</span>}
-          </div>
-          {sidebarOpen && (
-            <div className="db-user-card">
-              <div className="db-user-avatar" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>
-                {nom ? nom.charAt(0).toUpperCase() : 'A'}
-              </div>
-              <div>
-                <div className="db-user-name">{nom} {prenom}</div>
-                <div className="db-user-email">{email}</div>
-              </div>
-              <FiChevronDown size={14} color="#64748b" />
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* ── MAIN ── */}
       <main className="db-main">
-
-        {/* ── TOPBAR ── */}
         <header className="db-topbar">
           <div className="db-search">
             <FiSearch size={16} color="#64748b" />
@@ -190,9 +109,7 @@ export default function Maintenances() {
           </div>
         </header>
 
-        {/* ── CONTENT ── */}
         <div className="db-content">
-
           <div className="mat-header">
             <div>
               <h1 className="mat-title">Gestion des Maintenances</h1>
@@ -209,21 +126,19 @@ export default function Maintenances() {
           <div className="mat-toolbar">
             <div className="mat-search">
               <FiSearch size={16} color="#64748b" />
-              <input
-                placeholder="Rechercher une maintenance..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
+              <input placeholder="Rechercher une maintenance..."
+                value={search} onChange={e => setSearch(e.target.value)} />
             </div>
-            <button className="mat-btn-add" onClick={() => navigate('/maintenances/ajouter')}>
-              <FiPlus size={18} /> Nouvelle maintenance
-            </button>
+            {(role === 'ADMINISTRATEUR' || role === 'TECHNICIEN') && (
+              <button className="mat-btn-add" onClick={() => navigate('/maintenances/ajouter')}>
+                <FiPlus size={18} /> Nouvelle maintenance
+              </button>
+            )}
           </div>
 
           <div className="mat-filters">
             {['Tous', 'En cours', 'Terminée', 'Préventive', 'Corrective'].map(f => (
-              <button
-                key={f}
+              <button key={f}
                 className={`mat-filter-btn ${activeFilter === f ? 'mat-filter-active' : ''}`}
                 style={{
                   border: activeFilter === f ? 'none' :
@@ -236,16 +151,12 @@ export default function Maintenances() {
                     f === 'En cours' ? '#F59E0B' :
                     f === 'Terminée' ? '#22C55E' :
                     f === 'Préventive' ? '#3B82F6' :
-                    f === 'Corrective' ? '#EF4444' :
-                    '#64748b',
+                    f === 'Corrective' ? '#EF4444' : '#64748b',
                   background: activeFilter === f ? '#2563EB' : 'transparent',
                   padding: '8px 20px', borderRadius: '8px',
                   fontSize: '14px', fontWeight: '500', cursor: 'pointer',
                 }}
-                onClick={() => setActiveFilter(f)}
-              >
-                {f}
-              </button>
+                onClick={() => setActiveFilter(f)}>{f}</button>
             ))}
           </div>
 
@@ -278,9 +189,7 @@ export default function Maintenances() {
                   ) : paginated.map((m, i) => (
                     <tr key={m.id || i}>
                       <td>
-                        <span className={`mat-badge ${getTypeClass(m.type)}`}>
-                          {m.type}
-                        </span>
+                        <span className={`mat-badge ${getTypeClass(m.type)}`}>{m.type}</span>
                       </td>
                       <td style={{ color: '#fff', fontWeight: '500' }}>{m.description}</td>
                       <td>{m.materiel?.marque} {m.materiel?.modele}</td>
@@ -343,10 +252,9 @@ export default function Maintenances() {
                   <FiChevronLeft size={16} />
                 </button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                  <button key={p} className={`mat-pag-btn ${currentPage === p ? 'mat-pag-active' : ''}`}
-                    onClick={() => setCurrentPage(p)}>
-                    {p}
-                  </button>
+                  <button key={p}
+                    className={`mat-pag-btn ${currentPage === p ? 'mat-pag-active' : ''}`}
+                    onClick={() => setCurrentPage(p)}>{p}</button>
                 ))}
                 <button className="mat-pag-btn"
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
@@ -356,7 +264,6 @@ export default function Maintenances() {
               </div>
             </div>
           )}
-
         </div>
       </main>
     </div>

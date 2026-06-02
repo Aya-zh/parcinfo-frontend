@@ -3,40 +3,22 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import '../styles/Dashboard.css';
 import '../styles/Materiels.css';
+import Sidebar from '../components/Sidebar';
 import {
-  FiHome, FiChevronLeft, FiChevronRight, FiChevronDown,
-  FiAlertTriangle, FiBell, FiSettings, FiSearch, FiCheck, FiX
+  FiHome, FiChevronDown, FiBell, FiSearch, FiCheck, FiX
 } from 'react-icons/fi';
-import { HiOutlineDesktopComputer } from 'react-icons/hi';
-import { MdOutlineAssignment, MdOutlineNotifications, MdOutlineDashboard } from 'react-icons/md';
-import { TbReportAnalytics, TbDeviceDesktop } from 'react-icons/tb';
-import { BsTools, BsFileText, BsPeople } from 'react-icons/bs';
 import { useAuth } from '../context/AuthContext';
 
 export default function DetailDemande() {
   const navigate = useNavigate();
   const { id } = useParams();
   const nom = localStorage.getItem('nom');
-  const prenom = localStorage.getItem('prenom');
-  const email = localStorage.getItem('email');
   const role = localStorage.getItem('role');
   const { notifCount } = useAuth();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [demande, setDemande] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const menuItems = [
-    { icon: <MdOutlineDashboard size={20} />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <HiOutlineDesktopComputer size={20} />, label: 'Matériels', path: '/materiels' },
-    { icon: <MdOutlineAssignment size={20} />, label: 'Affectations', path: '/affectations' },
-    { icon: <FiAlertTriangle size={20} />, label: 'Pannes', path: '/pannes' },
-    { icon: <BsTools size={18} />, label: 'Maintenances', path: '/maintenances' },
-    { icon: <BsFileText size={18} />, label: 'Demandes', path: '/demandes' },
-    { icon: <BsPeople size={20} />, label: 'Utilisateurs', path: '/utilisateurs' },
-    { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: notifCount },
-    { icon: <TbReportAnalytics size={20} />, label: 'Rapports', path: '/rapports' },
-  ];
 
   const getRoleLabel = () => {
     switch (role) {
@@ -57,8 +39,11 @@ export default function DetailDemande() {
     const map = {
       EN_ATTENTE: 'mat-badge-orange',
       VALIDEE: 'mat-badge-green',
+      APPROUVEE: 'mat-badge-green',
       REJETEE: 'mat-badge-red',
+      REFUSEE: 'mat-badge-red',
       ANNULEE: 'mat-badge-red',
+      TRAITEE: 'mat-badge-blue',
     };
     return map[statut] || '';
   };
@@ -67,8 +52,11 @@ export default function DetailDemande() {
     const map = {
       EN_ATTENTE: 'En attente',
       VALIDEE: 'Validée',
+      APPROUVEE: 'Approuvée',
       REJETEE: 'Rejetée',
+      REFUSEE: 'Refusée',
       ANNULEE: 'Annulée',
+      TRAITEE: 'Traitée',
     };
     return map[statut] || statut;
   };
@@ -82,18 +70,14 @@ export default function DetailDemande() {
     try {
       await api.put(`/api/demandes/${id}/valider`);
       setDemande(prev => ({ ...prev, statut: 'VALIDEE' }));
-    } catch (err) {
-      alert('Erreur lors de la validation');
-    }
+    } catch { alert('Erreur lors de la validation'); }
   };
 
   const handleRejeter = async () => {
     try {
       await api.put(`/api/demandes/${id}/rejeter`);
       setDemande(prev => ({ ...prev, statut: 'REJETEE' }));
-    } catch (err) {
-      alert('Erreur lors du rejet');
-    }
+    } catch { alert('Erreur lors du rejet'); }
   };
 
   const handleAnnuler = async () => {
@@ -101,9 +85,7 @@ export default function DetailDemande() {
       try {
         await api.put(`/api/demandes/${id}/annuler`);
         navigate('/demandes');
-      } catch (err) {
-        alert("Erreur lors de l'annulation");
-      }
+      } catch { alert("Erreur lors de l'annulation"); }
     }
   };
 
@@ -115,49 +97,7 @@ export default function DetailDemande() {
 
   return (
     <div className="db-root">
-      <aside className={`db-sidebar ${sidebarOpen ? '' : 'db-sidebar-closed'}`}>
-        <div className="db-sidebar-logo">
-          <div className="db-logo-icon"><TbDeviceDesktop size={22} color="#fff" /></div>
-          {sidebarOpen && (
-            <div>
-              <div className="db-logo-title">ParcInfo</div>
-              <div className="db-logo-sub">Gestion de Parc Informatique</div>
-            </div>
-          )}
-          <button className="db-collapse-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? <FiChevronLeft size={16} /> : <FiChevronRight size={16} />}
-          </button>
-        </div>
-        <nav className="db-nav">
-          {menuItems.map((item) => (
-            <div key={item.label}
-              className={`db-nav-item ${item.label === 'Demandes' ? 'db-nav-active' : ''}`}
-              onClick={() => navigate(item.path)}>
-              <span className="db-nav-icon">{item.icon}</span>
-              {sidebarOpen && <span className="db-nav-label">{item.label}</span>}
-              {sidebarOpen && item.badge && <span className="db-badge">{item.badge}</span>}
-            </div>
-          ))}
-        </nav>
-        <div className="db-sidebar-bottom">
-          <div className="db-nav-item" onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>
-            <span className="db-nav-icon"><FiSettings size={20} /></span>
-            {sidebarOpen && <span className="db-nav-label">Déconnexion</span>}
-          </div>
-          {sidebarOpen && (
-            <div className="db-user-card">
-              <div className="db-user-avatar" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>
-                {nom ? nom.charAt(0).toUpperCase() : 'A'}
-              </div>
-              <div>
-                <div className="db-user-name">{nom} {prenom}</div>
-                <div className="db-user-email">{email}</div>
-              </div>
-              <FiChevronDown size={14} color="#64748b" />
-            </div>
-          )}
-        </div>
-      </aside>
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeLabel="Demandes" />
 
       <main className="db-main">
         <header className="db-topbar">
@@ -198,7 +138,6 @@ export default function DetailDemande() {
 
           <div className="mat-form-card">
 
-            {/* EN-TÊTE */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
               <div>
                 <h2 style={{ color: '#fff', fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>
@@ -244,7 +183,6 @@ export default function DetailDemande() {
               </div>
             </div>
 
-            {/* INFOS */}
             <div className="mat-form-section-title">Informations générales</div>
             <div className="mat-form-grid" style={{ marginBottom: '1.5rem' }}>
               <div className="mat-form-group">

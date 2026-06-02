@@ -3,22 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import '../styles/Dashboard.css';
 import '../styles/Materiels.css';
+import Sidebar from '../components/Sidebar';
 import {
-  FiHome, FiChevronLeft, FiChevronRight, FiChevronDown,
-  FiAlertTriangle, FiBell, FiSettings, FiSearch
+  FiHome, FiChevronDown, FiBell, FiSearch
 } from 'react-icons/fi';
-import { HiOutlineDesktopComputer } from 'react-icons/hi';
-import { MdOutlineAssignment, MdOutlineNotifications, MdOutlineDashboard } from 'react-icons/md';
-import { TbReportAnalytics, TbDeviceDesktop } from 'react-icons/tb';
-import { BsTools, BsFileText, BsPeople } from 'react-icons/bs';
 import { useAuth } from '../context/AuthContext';
 
 export default function ModifierPanne() {
   const navigate = useNavigate();
   const { id } = useParams();
   const nom = localStorage.getItem('nom');
-  const prenom = localStorage.getItem('prenom');
-  const email = localStorage.getItem('email');
   const role = localStorage.getItem('role');
   const { notifCount } = useAuth();
 
@@ -30,26 +24,9 @@ export default function ModifierPanne() {
   const [success, setSuccess] = useState('');
 
   const [form, setForm] = useState({
-    description: '',
-    niveauGravite: 'MOYENNE',
-    statut: 'EN_ATTENTE',
-    idMateriel: '',
-    idBeneficiaire: '',
-    dateSignalement: '',
-    dateResolution: '',
+    description: '', niveauGravite: 'MOYENNE', statut: 'EN_ATTENTE',
+    idMateriel: '', idBeneficiaire: '', dateSignalement: '', dateResolution: '',
   });
-
-  const menuItems = [
-    { icon: <MdOutlineDashboard size={20} />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <HiOutlineDesktopComputer size={20} />, label: 'Matériels', path: '/materiels' },
-    { icon: <MdOutlineAssignment size={20} />, label: 'Affectations', path: '/affectations' },
-    { icon: <FiAlertTriangle size={20} />, label: 'Pannes', path: '/pannes' },
-    { icon: <BsTools size={18} />, label: 'Maintenances', path: '/maintenances' },
-    { icon: <BsFileText size={18} />, label: 'Demandes', path: '/demandes' },
-    { icon: <BsPeople size={20} />, label: 'Utilisateurs', path: '/utilisateurs' },
-    { icon: <MdOutlineNotifications size={22} />, label: 'Notifications', path: '/notifications', badge: notifCount },
-    { icon: <TbReportAnalytics size={20} />, label: 'Rapports', path: '/rapports' },
-  ];
 
   const getRoleLabel = () => {
     switch (role) {
@@ -64,39 +41,28 @@ export default function ModifierPanne() {
       .then(res => {
         const p = res.data;
         setForm({
-          description: p.description || '',
-          niveauGravite: p.niveauGravite || 'MOYENNE',
-          statut: p.statut || 'EN_ATTENTE',
-          idMateriel: p.materiel?.id || '',
-          idBeneficiaire: p.beneficiaire?.id || '',
-          dateSignalement: p.dateSignalement || '',
+          description: p.description || '', niveauGravite: p.niveauGravite || 'MOYENNE',
+          statut: p.statut || 'EN_ATTENTE', idMateriel: p.materiel?.id || '',
+          idBeneficiaire: p.beneficiaire?.id || '', dateSignalement: p.dateSignalement || '',
           dateResolution: p.dateResolution || '',
         });
       })
       .catch(() => setError("Impossible de charger la panne."));
-
     api.get('/api/materiels').then(res => setMateriels(res.data)).catch(() => {});
-
     api.get('/api/utilisateurs')
       .then(res => setUtilisateurs(res.data.filter(u => u.role === 'BENEFICIAIRE')))
       .catch(() => {});
   }, [id]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
+    setError(''); setSuccess(''); setLoading(true);
     try {
       await api.put(`/api/pannes/${id}`, {
-        description: form.description,
-        niveauGravite: form.niveauGravite,
-        statut: form.statut,
-        idMateriel: parseInt(form.idMateriel),
+        description: form.description, niveauGravite: form.niveauGravite,
+        statut: form.statut, idMateriel: parseInt(form.idMateriel),
         idBeneficiaire: parseInt(form.idBeneficiaire),
       });
       setSuccess('Panne modifiée avec succès !');
@@ -104,88 +70,19 @@ export default function ModifierPanne() {
     } catch (err) {
       const errData = err.response?.data;
       setError(typeof errData === 'string' ? errData : errData?.erreur || 'Erreur lors de la modification.');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const inputStyle = {
-    background: '#0D1B33',
-    border: '1px solid #1A2B4A',
-    borderRadius: '10px',
-    padding: '13px 16px',
-    color: '#fff',
-    fontSize: '14px',
-    outline: 'none',
-    width: '100%',
+    background: '#0D1B33', border: '1px solid #1A2B4A', borderRadius: '10px',
+    padding: '13px 16px', color: '#fff', fontSize: '14px', outline: 'none', width: '100%',
   };
-
-  const labelStyle = {
-    fontSize: '14px',
-    color: '#94a3b8',
-    fontWeight: '500',
-  };
+  const labelStyle = { fontSize: '14px', color: '#94a3b8', fontWeight: '500' };
 
   return (
     <div className="db-root">
-
-      {/* ── SIDEBAR ── */}
-      <aside className={`db-sidebar ${sidebarOpen ? '' : 'db-sidebar-closed'}`}>
-        <div className="db-sidebar-logo">
-          <div className="db-logo-icon">
-            <TbDeviceDesktop size={22} color="#fff" />
-          </div>
-          {sidebarOpen && (
-            <div>
-              <div className="db-logo-title">ParcInfo</div>
-              <div className="db-logo-sub">Gestion de Parc Informatique</div>
-            </div>
-          )}
-          <button className="db-collapse-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? <FiChevronLeft size={16} /> : <FiChevronRight size={16} />}
-          </button>
-        </div>
-
-        <nav className="db-nav">
-          {menuItems.map((item) => (
-            <div
-              key={item.label}
-              className={`db-nav-item ${item.label === 'Pannes' ? 'db-nav-active' : ''}`}
-              onClick={() => navigate(item.path)}
-            >
-              <span className="db-nav-icon">{item.icon}</span>
-              {sidebarOpen && <span className="db-nav-label">{item.label}</span>}
-              {sidebarOpen && item.badge && (
-                <span className="db-badge">{item.badge}</span>
-              )}
-            </div>
-          ))}
-        </nav>
-
-        <div className="db-sidebar-bottom">
-          <div className="db-nav-item" onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>
-            <span className="db-nav-icon"><FiSettings size={20} /></span>
-            {sidebarOpen && <span className="db-nav-label">Déconnexion</span>}
-          </div>
-          {sidebarOpen && (
-            <div className="db-user-card">
-              <div className="db-user-avatar" style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>
-                {nom ? nom.charAt(0).toUpperCase() : 'A'}
-              </div>
-              <div>
-                <div className="db-user-name">{nom} {prenom}</div>
-                <div className="db-user-email">{email}</div>
-              </div>
-              <FiChevronDown size={14} color="#64748b" />
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* ── MAIN ── */}
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeLabel="Pannes" />
       <main className="db-main">
-
-        {/* ── TOPBAR ── */}
         <header className="db-topbar">
           <div className="db-search">
             <FiSearch size={16} color="#64748b" />
@@ -206,75 +103,28 @@ export default function ModifierPanne() {
             </div>
           </div>
         </header>
-
-        {/* ── CONTENT ── */}
         <div className="db-content">
-
-          {/* ── HEADER ── */}
           <div className="mat-header">
             <div>
               <h1 className="mat-title">Modifier Panne</h1>
               <div className="mat-breadcrumb">
                 <FiHome size={13} />
-                <span style={{ cursor: 'pointer', color: '#3B82F6' }}
-                  onClick={() => navigate('/dashboard')}>Accueil</span>
+                <span style={{ cursor: 'pointer', color: '#3B82F6' }} onClick={() => navigate('/dashboard')}>Accueil</span>
                 <span className="mat-sep">/</span>
-                <span style={{ cursor: 'pointer', color: '#3B82F6' }}
-                  onClick={() => navigate('/pannes')}>Pannes</span>
+                <span style={{ cursor: 'pointer', color: '#3B82F6' }} onClick={() => navigate('/pannes')}>Pannes</span>
                 <span className="mat-sep">/</span>
                 <span className="mat-bc-active">Modifier</span>
               </div>
             </div>
           </div>
-
-          {/* ── FORM ── */}
-          <div style={{
-            background: '#0A1628',
-            border: '1px solid #1A2B4A',
-            borderRadius: '14px',
-            padding: '32px',
-            maxWidth: '700px',
-          }}>
-
-            {error && (
-              <div style={{
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.4)',
-                borderRadius: '8px', padding: '12px 16px',
-                marginBottom: '20px', color: '#f87171', fontSize: '14px'
-              }}>
-                ⚠ {error}
-              </div>
-            )}
-
-            {success && (
-              <div style={{
-                background: 'rgba(34,197,94,0.1)',
-                border: '1px solid rgba(34,197,94,0.4)',
-                borderRadius: '8px', padding: '12px 16px',
-                marginBottom: '20px', color: '#22C55E', fontSize: '14px'
-              }}>
-                ✅ {success}
-              </div>
-            )}
-
+          <div style={{ background: '#0A1628', border: '1px solid #1A2B4A', borderRadius: '14px', padding: '32px', maxWidth: '700px' }}>
+            {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#f87171', fontSize: '14px' }}>⚠ {error}</div>}
+            {success && <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.4)', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#22C55E', fontSize: '14px' }}>✅ {success}</div>}
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-              {/* Description */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={labelStyle}>Description *</label>
-                <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  required
-                  rows={3}
-                  placeholder="Décrivez la panne..."
-                  style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
-                />
+                <textarea name="description" value={form.description} onChange={handleChange} required rows={3} placeholder="Décrivez la panne..." style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
               </div>
-
-              {/* Gravité + Statut */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={labelStyle}>Niveau de gravité *</label>
@@ -294,84 +144,24 @@ export default function ModifierPanne() {
                   </select>
                 </div>
               </div>
-
-              {/* Dates en lecture seule */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={labelStyle}>Date signalement</label>
-                  <input
-                    type="text"
-                    value={form.dateSignalement || '—'}
-                    disabled
-                    style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={labelStyle}>Date résolution</label>
-                  <input
-                    type="text"
-                    value={form.dateResolution || '—'}
-                    disabled
-                    style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }}
-                  />
-                </div>
-              </div>
-
-              {/* Matériel */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={labelStyle}>Matériel concerné *</label>
                 <select name="idMateriel" value={form.idMateriel} onChange={handleChange} required style={inputStyle}>
                   <option value="">-- Sélectionner un matériel --</option>
-                  {materiels.map(m => (
-                    <option key={m.id} value={m.id}>
-                      {m.codeInventaire} — {m.marque} {m.modele}
-                    </option>
-                  ))}
+                  {materiels.map(m => <option key={m.id} value={m.id}>{m.codeInventaire} — {m.marque} {m.modele}</option>)}
                 </select>
               </div>
-
-              {/* Bénéficiaire */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={labelStyle}>Bénéficiaire *</label>
                 <select name="idBeneficiaire" value={form.idBeneficiaire} onChange={handleChange} required style={inputStyle}>
                   <option value="">-- Sélectionner un bénéficiaire --</option>
-                  {utilisateurs.map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.nom} {u.prenom} — {u.email}
-                    </option>
-                  ))}
+                  {utilisateurs.map(u => <option key={u.id} value={u.id}>{u.nom} {u.prenom} — {u.email}</option>)}
                 </select>
               </div>
-
-              {/* Boutons */}
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => navigate('/pannes')}
-                  style={{
-                    flex: 1, padding: '13px', background: 'transparent',
-                    border: '1px solid #1A2B4A', borderRadius: '10px',
-                    color: '#64748b', fontSize: '15px', cursor: 'pointer'
-                  }}
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    flex: 1, padding: '13px',
-                    background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-                    border: 'none', borderRadius: '10px',
-                    color: '#fff', fontSize: '15px', fontWeight: '600',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.7 : 1
-                  }}
-                >
-                  {loading ? 'Modification...' : 'Enregistrer les modifications'}
-                </button>
+                <button type="button" onClick={() => navigate('/pannes')} style={{ flex: 1, padding: '13px', background: 'transparent', border: '1px solid #1A2B4A', borderRadius: '10px', color: '#64748b', fontSize: '15px', cursor: 'pointer' }}>Annuler</button>
+                <button type="submit" disabled={loading} style={{ flex: 1, padding: '13px', background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', border: 'none', borderRadius: '10px', color: '#fff', fontSize: '15px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>{loading ? 'Modification...' : 'Enregistrer les modifications'}</button>
               </div>
-
             </form>
           </div>
         </div>
