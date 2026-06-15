@@ -44,17 +44,18 @@ export default function AjouterAffectation() {
   useEffect(() => {
     api.get('/api/materiels')
       .then(res => setMateriels(res.data.filter(m => m.etat === 'DISPONIBLE')))
-      .catch(() => {});
+      .catch(err => console.error('Materiels error:', err));
+
     api.get('/api/utilisateurs')
       .then(res => {
         const tous = res.data;
-        const beneficiaires = tous.filter(u => u.role === 'BENEFICIAIRE' || u.role === 'UTILISATEUR');
+        const beneficiaires = tous.filter(u => u.role === 'BENEFICIAIRE');
         const resps = tous.filter(u => u.role === 'RESPONSABLE' || u.role === 'ADMINISTRATEUR');
-        setUtilisateurs(beneficiaires.length > 0 ? beneficiaires : tous);
-        setResponsables(resps.length > 0 ? resps : tous);
+        setUtilisateurs(beneficiaires);
+        setResponsables(resps);
       })
-      .catch(() => {});
-  }, []);
+      .catch(err => console.error('Utilisateurs error:', err));
+}, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
